@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>For Roya Jan</title>
+  <style>
+    :root{
+      --bg1:#0b0b14;
+      --bg2:#140b12;
+      --text:#fff;
+      --muted:rgba(255,255,255,.75);
+      --accent:#ff4d7d;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 700px at 50% 20%, #24102a 0%, var(--bg1) 55%, #05050b 100%);
+      color:var(--text);
+      overflow:hidden;
+    }
+
+    /* "Pages" */
+    .page{
+      position:fixed; inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      transition: opacity .45s ease, transform .45s ease;
+    }
+    .hidden{
+      opacity:0;
+      pointer-events:none;
+      transform: translateY(10px);
+    }
+
+    .card{
+      width:min(680px, 92vw);
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 22px;
+      padding: 28px 22px;
+      text-align:center;
+      box-shadow: 0 16px 60px rgba(0,0,0,.45);
+      backdrop-filter: blur(10px);
+    }
+    h1{
+      margin:0 0 10px;
+      font-size: clamp(28px, 4.4vw, 46px);
+      letter-spacing: .4px;
+      line-height: 1.1;
+    }
+    p{
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: clamp(14px, 2.2vw, 18px);
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      border:0;
+      cursor:pointer;
+      padding: 12px 18px;
+      border-radius: 999px;
+      font-weight: 650;
+      color: #120611;
+      background: linear-gradient(90deg, #ff4d7d, #ffb3c7);
+      box-shadow: 0 10px 26px rgba(255,77,125,.28);
+      transition: transform .15s ease, filter .15s ease;
+      user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.05); }
+    .btn:active{ transform: translateY(0px) scale(.99); }
+
+    /* Roses falling */
+    #rosePage{
+      background: radial-gradient(1200px 700px at 50% 20%, #3b1130 0%, var(--bg2) 55%, #07040a 100%);
+    }
+    .titleGlow{
+      text-shadow: 0 0 18px rgba(255,77,125,.35);
+    }
+
+    .rose{
+      position: absolute;
+      top:-10vh;
+      font-size: 28px;
+      will-change: transform, top, left;
+      filter: drop-shadow(0 8px 14px rgba(0,0,0,.35));
+      opacity: .95;
+      pointer-events:none;
+      transform: translate3d(0,0,0);
+      animation-name: fall, sway;
+      animation-timing-function: linear, ease-in-out;
+      animation-iteration-count: 1, infinite;
+    }
+
+    @keyframes fall{
+      to { top: 110vh; }
+    }
+    @keyframes sway{
+      0%   { transform: translateX(-12px) rotate(-8deg); }
+      50%  { transform: translateX(12px) rotate(8deg); }
+      100% { transform: translateX(-12px) rotate(-8deg); }
+    }
+
+    .smallNote{
+      margin-top: 10px;
+      font-size: 12px;
+      opacity:.7;
+    }
+
+    /* optional: subtle stars */
+    .stars{
+      position:absolute; inset:0;
+      background-image:
+        radial-gradient(2px 2px at 20% 30%, rgba(255,255,255,.18) 50%, transparent 51%),
+        radial-gradient(1px 1px at 70% 40%, rgba(255,255,255,.12) 50%, transparent 51%),
+        radial-gradient(1px 1px at 45% 80%, rgba(255,255,255,.10) 50%, transparent 51%),
+        radial-gradient(2px 2px at 85% 75%, rgba(255,255,255,.14) 50%, transparent 51%);
+      opacity:.55;
+      pointer-events:none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Page 1 -->
+  <section class="page" id="lovePage" aria-label="Love page">
+    <div class="card">
+      <h1 class="titleGlow">Roya Jan, I love you ❤️</h1>
+      <p>Click the button to see roses falling from the sky.</p>
+      <button class="btn" id="openRoses">
+        🌹 Open the roses
+      </button>
+      <div class="smallNote">Tip: it will also auto-open after 2 seconds.</div>
+    </div>
+  </section>
+
+  <!-- Page 2 -->
+  <section class="page hidden" id="rosePage" aria-label="Roses page">
+    <div class="stars"></div>
+    <div class="card" style="position:relative; z-index:2;">
+      <h1 class="titleGlow">For you, Roya Jan 🌹</h1>
+      <p>May your days be soft, bright, and full of love.</p>
+      <button class="btn" id="backBtn">⬅ Back</button>
+    </div>
+  </section>
+
+  <script>
+    const lovePage = document.getElementById('lovePage');
+    const rosePage = document.getElementById('rosePage');
+    const openRosesBtn = document.getElementById('openRoses');
+    const backBtn = document.getElementById('backBtn');
+
+    let roseInterval = null;
+
+    function showRosesPage(){
+      lovePage.classList.add('hidden');
+      rosePage.classList.remove('hidden');
+      startRoses();
+    }
+
+    function showLovePage(){
+      rosePage.classList.add('hidden');
+      lovePage.classList.remove('hidden');
+      stopRoses();
+      // remove leftover roses
+      document.querySelectorAll('.rose').forEach(r => r.remove());
+    }
+
+    function random(min, max){ return Math.random() * (max - min) + min; }
+
+    function spawnRose(){
+      const rose = document.createElement('div');
+      rose.className = 'rose';
+      rose.textContent = '🌹';
+
+      const left = random(0, 100); // vw
+      const size = random(18, 44); // px
+      const fallDuration = random(4.5, 9.5); // seconds
+      const swayDuration = random(1.6, 3.2); // seconds
+
+      rose.style.left = left + 'vw';
+      rose.style.fontSize = size + 'px';
+      rose.style.animationDuration = `${fallDuration}s, ${swayDuration}s`;
+      rose.style.animationDelay = `0s, ${random(0, 1.2)}s`;
+
+      rosePage.appendChild(rose);
+
+      // cleanup after falling
+      setTimeout(() => rose.remove(), fallDuration * 1000 + 500);
+    }
+
+    function startRoses(){
+      if (roseInterval) return;
+      // initial burst
+      for (let i = 0; i < 16; i++) setTimeout(spawnRose, i * 120);
+
+      // continuous roses
+      roseInterval = setInterval(() => {
+        // spawn 1–3 each tick
+        const count = Math.floor(random(1, 4));
+        for (let i = 0; i < count; i++) spawnRose();
+      }, 450);
+    }
+
+    function stopRoses(){
+      if (!roseInterval) return;
+      clearInterval(roseInterval);
+      roseInterval = null;
+    }
+
+    openRosesBtn.addEventListener('click', showRosesPage);
+    backBtn.addEventListener('click', showLovePage);
+
+    // auto open after 2 seconds
+    setTimeout(() => {
+      if (!lovePage.classList.contains('hidden')) showRosesPage();
+    }, 2000);
+  </script>
+</body>
+</html>
